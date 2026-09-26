@@ -1,2 +1,20 @@
 # PixelForge-DR-Screening
-AI-assisted diabetic retinopathy screening using ResNet-50, Grad-CAM explainability and image quality assessment in MATLAB.
+PixelForge — AI-Assisted Diabetic Retinopathy Screening
+Team PixelForge | Smart India Hackathon 2026
+Problem Statement
+Proposed Solution
+System Architecture
+Features
+Dataset
+Methodology
+Model Architecture
+Results
+Explainable AI — Grad-CAM
+Image Quality Assessment
+Doctor Dashboard
+Installation
+How to Run
+Project Structure
+Limitations
+Future Scope
+Team
