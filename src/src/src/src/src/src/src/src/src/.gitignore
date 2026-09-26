@@ -1,0 +1,28 @@
+# ==========================================================
+# PixelForge - Git Ignore
+# ==========================================================
+
+# Retinal image dataset
+dataset/
+
+# MATLAB trained models and saved workspace files
+*.mat
+
+# MATLAB temporary / autosave files
+*.asv
+*.autosave
+
+# MATLAB generated folders
+slprj/
+codegen/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Editor settings
+.vscode/
