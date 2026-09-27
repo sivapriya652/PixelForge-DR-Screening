@@ -4,18 +4,37 @@ close all;
 
 %% =========================================================
 % PIXELFORGE
-% COMPLETE AI-ASSISTED DIABETIC RETINOPATHY SCREENING DEMO
+% COMPLETE POC DEMONSTRATION
+%
+% PART A:
+% AI-Assisted Diabetic Retinopathy Screening
+%
+% PART B:
+% District-Level Telemedicine Workflow Simulation in Simulink
+%
+% Academic prototype for screening support.
+% Clinician review is required for final interpretation.
 %% =========================================================
 
 disp("======================================================");
-disp("PIXELFORGE");
-disp("AI-ASSISTED DIABETIC RETINOPATHY SCREENING");
+disp("                    PIXELFORGE");
+disp(" AI-ASSISTED DIABETIC RETINOPATHY SCREENING SYSTEM");
 disp("======================================================");
 
-%% 1. Check Trained Model
+%% =========================================================
+% PART A
+% AI-ASSISTED FUNDUS IMAGE SCREENING
+%% =========================================================
+
+disp(" ");
+disp("======================================================");
+disp("PART A - AI FUNDUS IMAGE SCREENING");
+disp("======================================================");
+
+%% 1. Check Model
 
 if ~isfile("DR_ResNet50_Final.mat")
-    error("DR_ResNet50_Final.mat not found. Train the model first.");
+    error("DR_ResNet50_Final.mat not found. Place the trained model in the MATLAB Current Folder.");
 end
 
 %% 2. Load Model
@@ -31,9 +50,6 @@ disp("Model loaded successfully.");
 
 %% 3. Select Fundus Image
 
-disp(" ");
-disp("Select a fundus image for screening...");
-
 [file, path] = uigetfile({'*.jpg;*.jpeg;*.png;*.tif;*.tiff', 'Fundus Images'}, 'PixelForge - Select Fundus Image');
 
 if isequal(file, 0)
@@ -45,7 +61,7 @@ imagePath = fullfile(path, file);
 
 fprintf("Selected Image : %s\n", file);
 
-%% 4. Generate Demo Sample ID
+%% 4. Create Demo Sample ID
 
 sampleNumber = randi([10000 99999]);
 
@@ -54,14 +70,14 @@ sampleID = sprintf("PF-%05d", sampleNumber);
 screeningDate = string(datetime("now", "Format", "dd-MMM-yyyy HH:mm:ss"));
 
 fprintf("Sample ID      : %s\n", sampleID);
-fprintf("Screening Time : %s\n", screeningDate);
+fprintf("Date / Time    : %s\n", screeningDate);
 
-%% 5. Start Total Pipeline Timer
+%% 5. Start Complete AI Pipeline Timer
 
 totalPipelineStart = tic;
 
 %% =========================================================
-% IMAGE LOADING
+% STAGE 1 - IMAGE LOADING
 %% =========================================================
 
 Ioriginal = imread(imagePath);
@@ -81,7 +97,7 @@ if size(Irgb, 3) > 3
 end
 
 %% =========================================================
-% STAGE 1 - IMAGE QUALITY ASSESSMENT
+% STAGE 2 - IMAGE QUALITY ASSESSMENT
 %% =========================================================
 
 disp(" ");
@@ -118,11 +134,14 @@ qualityPass = focusPass && illuminationPass && contrastPass;
 
 qualityCheckTime = toc(qualityStart);
 
-fprintf("\nFocus Score  : %.2f\n", focusScore);
-fprintf("Illumination : %.3f\n", illuminationScore);
-fprintf("Contrast     : %.3f\n", contrastScore);
+fprintf("Focus Score       : %.2f\n", focusScore);
+fprintf("Illumination      : %.3f\n", illuminationScore);
+fprintf("Contrast          : %.3f\n", contrastScore);
+fprintf("Quality Check Time: %.4f seconds\n", qualityCheckTime);
 
-%% 6. Stop Pipeline if Image Quality Fails
+%% =========================================================
+% QUALITY FAILURE
+%% =========================================================
 
 if ~qualityPass
 
@@ -149,17 +168,12 @@ if ~qualityPass
     fprintf("\n======================================================\n");
     fprintf("IMAGE QUALITY: RECAPTURE REQUIRED\n");
     fprintf("======================================================\n");
-
-    fprintf("Reason             : %s\n", recaptureReason);
-    fprintf("Quality Check Time : %.4f seconds\n", qualityCheckTime);
-    fprintf("Total Time         : %.4f seconds\n", totalPipelineTime);
-
-    fprintf("------------------------------------------------------\n");
-    fprintf("DR classification was NOT performed.\n");
-    fprintf("Please recapture the fundus image.\n");
+    fprintf("Reason : %s\n", recaptureReason);
+    fprintf("DR classification was not performed.\n");
+    fprintf("Total Processing Time : %.4f seconds\n", totalPipelineTime);
     fprintf("======================================================\n");
 
-    figure("Name", "PixelForge - Recapture Required", "NumberTitle", "off", "Position", [250 120 900 650]);
+    figure("Name", "PixelForge - Recapture Required", "NumberTitle", "off", "Position", [250 100 950 650]);
 
     imshow(Irgb);
 
@@ -168,16 +182,21 @@ if ~qualityPass
         "IMAGE QUALITY: RECAPTURE REQUIRED"
         char(recaptureReason)
         sprintf("Focus: %.2f | Illumination: %.3f | Contrast: %.3f", focusScore, illuminationScore, contrastScore)
+        "DR Classification Stopped"
     }, "FontSize", 12, "FontWeight", "bold");
+
+    disp(" ");
+    disp("Poor-quality image detected.");
+    disp("For the complete POC demonstration, rerun the script using an acceptable fundus image.");
 
     return;
 end
 
 disp("IMAGE QUALITY: ACCEPTABLE");
-disp("Proceeding to DR screening...");
+disp("Proceeding to AI screening.");
 
 %% =========================================================
-% STAGE 2 - PREPROCESSING
+% STAGE 3 - IMAGE PREPARATION
 %% =========================================================
 
 disp(" ");
@@ -200,7 +219,7 @@ preprocessingTime = toc(preprocessingStart);
 fprintf("Preprocessing Time : %.4f seconds\n", preprocessingTime);
 
 %% =========================================================
-% STAGE 3 - RESNET-50 DR PREDICTION
+% STAGE 4 - RESNET-50 PREDICTION
 %% =========================================================
 
 disp(" ");
@@ -237,7 +256,10 @@ fprintf("Confidence         : %.2f %%\n", confidence * 100);
 fprintf("Prediction Time    : %.4f seconds\n", predictionTime);
 
 %% =========================================================
-% STAGE 4 - CONFIDENCE DISPLAY CATEGORY
+% STAGE 5 - CONFIDENCE DISPLAY CATEGORY
+%
+% Prototype display category only.
+% Not a clinically validated threshold.
 %% =========================================================
 
 if confidence >= 0.80
@@ -249,7 +271,7 @@ else
 end
 
 %% =========================================================
-% STAGE 5 - REVIEW PRIORITY
+% STAGE 6 - REVIEW PRIORITY
 %% =========================================================
 
 if predictedClass == "No_DR"
@@ -259,11 +281,11 @@ else
 end
 
 %% =========================================================
-% STAGE 6 - GRAD-CAM EXPLAINABILITY
+% STAGE 7 - GRAD-CAM
 %% =========================================================
 
 disp(" ");
-disp("STAGE 4: GENERATING GRAD-CAM");
+disp("STAGE 4: GRAD-CAM EXPLAINABILITY");
 
 gradcamStart = tic;
 
@@ -295,17 +317,17 @@ gradcamTime = toc(gradcamStart);
 fprintf("Grad-CAM Time : %.4f seconds\n", gradcamTime);
 
 %% =========================================================
-% STAGE 7 - TOTAL PIPELINE TIME
+% STAGE 8 - TOTAL AI PIPELINE TIME
 %% =========================================================
 
 totalPipelineTime = toc(totalPipelineStart);
 
 %% =========================================================
-% COMMAND WINDOW REPORT
+% COMPLETE SCREENING REPORT
 %% =========================================================
 
 fprintf("\n======================================================\n");
-fprintf("PIXELFORGE - FINAL SCREENING REPORT\n");
+fprintf("PIXELFORGE - AI SCREENING REPORT\n");
 fprintf("======================================================\n");
 
 fprintf("Sample ID          : %s\n", sampleID);
@@ -320,51 +342,33 @@ fprintf("Confidence         : %.2f %%\n", confidence * 100);
 fprintf("Confidence Level   : %s\n", confidenceLevel);
 fprintf("Review Priority    : %s\n", reviewPriority);
 
-fprintf("\nCLASS PROBABILITIES\n");
+fprintf("\nFIVE-CLASS PROBABILITIES\n");
 fprintf("------------------------------------------------------\n");
 
 for i = 1:numClasses
     fprintf("%-20s : %.2f %%\n", string(classNames{i}), scores(i) * 100);
 end
 
-fprintf("\nIMAGE QUALITY METRICS\n");
+fprintf("\nPROCESSING TIMES\n");
 fprintf("------------------------------------------------------\n");
 
-fprintf("Focus Score        : %.2f\n", focusScore);
-fprintf("Illumination       : %.3f\n", illuminationScore);
-fprintf("Contrast           : %.3f\n", contrastScore);
-
-fprintf("\nPROCESSING TIME\n");
-fprintf("------------------------------------------------------\n");
-
-fprintf("Quality Check      : %.4f seconds\n", qualityCheckTime);
+fprintf("Quality Assessment : %.4f seconds\n", qualityCheckTime);
 fprintf("Preprocessing      : %.4f seconds\n", preprocessingTime);
 fprintf("Prediction         : %.4f seconds\n", predictionTime);
 fprintf("Grad-CAM           : %.4f seconds\n", gradcamTime);
-fprintf("Total Pipeline     : %.4f seconds\n", totalPipelineTime);
+fprintf("Total AI Pipeline  : %.4f seconds\n", totalPipelineTime);
 
-fprintf("\nMODEL INFORMATION\n");
-fprintf("------------------------------------------------------\n");
-
-fprintf("Architecture       : ResNet-50\n");
-fprintf("Input Size         : 224 x 224 x 3\n");
-fprintf("Classes            : 5\n");
-fprintf("Execution          : Local CPU\n");
-fprintf("Explainability     : Grad-CAM\n");
-
-fprintf("\n======================================================\n");
-fprintf("AI screening support - clinician review required.\n");
 fprintf("======================================================\n");
 
 %% =========================================================
 % FINAL DOCTOR-FACING DASHBOARD
 %% =========================================================
 
-figure("Name", "PixelForge - Doctor Screening Dashboard", "NumberTitle", "off", "Position", [50 50 1450 820]);
+figure("Name", "PixelForge - Doctor Screening Dashboard", "NumberTitle", "off", "Position", [40 40 1450 820]);
 
 dashboard = tiledlayout(2, 3, "TileSpacing", "compact", "Padding", "compact");
 
-%% TILE 1 - ORIGINAL FUNDUS IMAGE
+%% Original Image
 
 nexttile;
 
@@ -375,7 +379,7 @@ title({
     sprintf("Sample ID: %s", sampleID)
 }, "FontSize", 11, "FontWeight", "bold");
 
-%% TILE 2 - GRAD-CAM
+%% Grad-CAM
 
 nexttile;
 
@@ -398,7 +402,7 @@ title("Grad-CAM Explanation", "FontSize", 11, "FontWeight", "bold");
 
 hold off;
 
-%% TILE 3 - AI SCREENING RESULT
+%% AI Result
 
 nexttile;
 
@@ -411,15 +415,15 @@ resultText = {
     sprintf("Confidence: %.2f%%", confidence * 100)
     sprintf("Confidence Level: %s", confidenceLevel)
     ""
-    sprintf("Review Priority:")
-    sprintf("%s", reviewPriority)
+    "Review Priority"
+    char(reviewPriority)
     ""
     "Clinician review required"
 };
 
 text(0.05, 0.95, resultText, "Units", "normalized", "VerticalAlignment", "top", "FontSize", 12, "FontWeight", "bold");
 
-%% TILES 4 AND 5 - CLASS PROBABILITIES
+%% Probability Distribution
 
 nexttile([1 2]);
 
@@ -437,7 +441,7 @@ title("Five-Class DR Probability Distribution", "FontSize", 11, "FontWeight", "b
 
 grid on;
 
-%% TILE 6 - TECHNICAL INFORMATION
+%% Technical Information
 
 nexttile;
 
@@ -455,7 +459,7 @@ technicalText = {
     "Execution: Local CPU"
     "Explainability: Grad-CAM"
     ""
-    sprintf("Prediction Time: %.3f s", predictionTime)
+    sprintf("Prediction: %.3f s", predictionTime)
     sprintf("Total Pipeline: %.3f s", totalPipelineTime)
 };
 
@@ -464,10 +468,10 @@ text(0.05, 0.95, technicalText, "Units", "normalized", "VerticalAlignment", "top
 title(dashboard, "PIXELFORGE - AI-ASSISTED DIABETIC RETINOPATHY SCREENING", "FontSize", 16, "FontWeight", "bold");
 
 %% =========================================================
-% PROCESSING TIME GRAPH
+% AI PIPELINE PROCESSING TIME GRAPH
 %% =========================================================
 
-figure("Name", "PixelForge - Processing Time", "NumberTitle", "off");
+figure("Name", "PixelForge - AI Processing Time", "NumberTitle", "off");
 
 processingStages = categorical(["Quality Check", "Preprocessing", "Prediction", "Grad-CAM", "Total Pipeline"]);
 
@@ -477,28 +481,455 @@ bar(processingStages, processingTimes);
 
 ylabel("Processing Time (seconds)");
 
-title("PixelForge - Screening Pipeline Processing Time");
+title("PixelForge - AI Screening Pipeline Processing Time");
 
 grid on;
 
 %% =========================================================
-% FINAL MESSAGE
+% PART B
+% DISTRICT-LEVEL SIMULINK WORKFLOW
 %% =========================================================
 
 disp(" ");
 disp("======================================================");
-disp("PIXELFORGE COMPLETE SCREENING DEMO FINISHED");
+disp("PART B - SIMULINK TELEMEDICINE WORKFLOW");
 disp("======================================================");
 
-fprintf("Sample ID       : %s\n", sampleID);
-fprintf("DR Grade        : %s\n", predictedClass);
-fprintf("Confidence      : %.2f %%\n", confidence * 100);
-fprintf("Review Priority : %s\n", reviewPriority);
-fprintf("Total Time      : %.4f seconds\n", totalPipelineTime);
+disp("Creating district-level workflow simulation...");
+
+%% =========================================================
+% OPERATIONAL SIMULATION ASSUMPTIONS
+%
+% These are prototype scenario assumptions.
+% They are NOT measured clinical workflow data.
+%% =========================================================
+
+annualPatients = 100000;
+
+workingDaysPerYear = 300;
+
+hoursPerDay = 8;
+
+requiredArrivalRate = annualPatients / workingDaysPerYear / hoursPerDay;
+
+imageAcquisitionCapacity = 45;
+
+bandwidthEfficiency = 0.85;
+
+aiProcessingCapacity = 60;
+
+priorityFraction = 0.30;
+
+routineFraction = 0.70;
+
+priorityReviewCapacity = 18;
+
+routineReviewCapacity = 30;
+
+fprintf("\nDISTRICT WORKFLOW ASSUMPTIONS\n");
+fprintf("------------------------------------------------------\n");
+
+fprintf("Annual Screening Demand     : %.0f patients/year\n", annualPatients);
+fprintf("Operational Days            : %.0f days/year\n", workingDaysPerYear);
+fprintf("Screening Hours             : %.0f hours/day\n", hoursPerDay);
+fprintf("Required Average Throughput : %.2f patients/hour\n", requiredArrivalRate);
+fprintf("Image Acquisition Capacity  : %.2f patients/hour\n", imageAcquisitionCapacity);
+fprintf("Bandwidth Efficiency        : %.0f %%\n", bandwidthEfficiency * 100);
+fprintf("AI Processing Capacity      : %.2f patients/hour\n", aiProcessingCapacity);
+fprintf("Priority Review Capacity    : %.2f patients/hour\n", priorityReviewCapacity);
+fprintf("Routine Review Capacity     : %.2f patients/hour\n", routineReviewCapacity);
+
+fprintf("------------------------------------------------------\n");
+
+%% =========================================================
+% CALCULATE WORKFLOW RATES
+%% =========================================================
+
+acquiredRate = min(requiredArrivalRate, imageAcquisitionCapacity);
+
+bandwidthAdjustedRate = acquiredRate * bandwidthEfficiency;
+
+aiThroughputRate = min(bandwidthAdjustedRate, aiProcessingCapacity);
+
+priorityDemandRate = aiThroughputRate * priorityFraction;
+
+routineDemandRate = aiThroughputRate * routineFraction;
+
+priorityCompletedRate = min(priorityDemandRate, priorityReviewCapacity);
+
+routineCompletedRate = min(routineDemandRate, routineReviewCapacity);
+
+completedRate = priorityCompletedRate + routineCompletedRate;
+
+backlogRate = max(aiThroughputRate - completedRate, 0);
+
+annualCompletedCapacity = completedRate * workingDaysPerYear * hoursPerDay;
+
+fprintf("\nCALCULATED WORKFLOW PERFORMANCE\n");
+fprintf("------------------------------------------------------\n");
+
+fprintf("Acquired Images             : %.2f patients/hour\n", acquiredRate);
+fprintf("After Bandwidth Constraint  : %.2f patients/hour\n", bandwidthAdjustedRate);
+fprintf("AI Throughput               : %.2f patients/hour\n", aiThroughputRate);
+fprintf("Priority Demand             : %.2f patients/hour\n", priorityDemandRate);
+fprintf("Routine Demand              : %.2f patients/hour\n", routineDemandRate);
+fprintf("Completed Reviews           : %.2f patients/hour\n", completedRate);
+fprintf("Backlog Rate                : %.2f patients/hour\n", backlogRate);
+fprintf("Annual Completed Capacity   : %.0f patients/year\n", annualCompletedCapacity);
+
+fprintf("------------------------------------------------------\n");
+
+%% =========================================================
+% CREATE SIMULINK MODEL
+%% =========================================================
+
+modelName = "PixelForge_Telemedicine_Workflow";
+
+if bdIsLoaded(modelName)
+    close_system(modelName, 0);
+end
+
+modelFile = modelName + ".slx";
+
+if isfile(modelFile)
+    delete(modelFile);
+end
+
+new_system(modelName);
+
+open_system(modelName);
+
+%% =========================================================
+% BLOCK POSITIONS
+%% =========================================================
+
+x1 = 50;
+x2 = 220;
+x3 = 390;
+x4 = 560;
+x5 = 730;
+x6 = 900;
+x7 = 1080;
+
+yMain = 180;
+yPriority = 80;
+yRoutine = 280;
+
+%% =========================================================
+% PATIENT ARRIVAL
+%% =========================================================
+
+add_block("simulink/Sources/Constant", modelName + "/Patient Arrival");
+
+set_param(modelName + "/Patient Arrival", "Value", num2str(requiredArrivalRate));
+
+set_param(modelName + "/Patient Arrival", "Position", [x1 yMain x1+110 yMain+50]);
+
+%% =========================================================
+% IMAGE ACQUISITION
+%% =========================================================
+
+add_block("simulink/Discontinuities/Saturation", modelName + "/Image Acquisition");
+
+set_param(modelName + "/Image Acquisition", "UpperLimit", num2str(imageAcquisitionCapacity));
+
+set_param(modelName + "/Image Acquisition", "LowerLimit", "0");
+
+set_param(modelName + "/Image Acquisition", "Position", [x2 yMain x2+110 yMain+50]);
+
+%% =========================================================
+% BANDWIDTH
+%% =========================================================
+
+add_block("simulink/Math Operations/Gain", modelName + "/Bandwidth Constraint");
+
+set_param(modelName + "/Bandwidth Constraint", "Gain", num2str(bandwidthEfficiency));
+
+set_param(modelName + "/Bandwidth Constraint", "Position", [x3 yMain x3+110 yMain+50]);
+
+%% =========================================================
+% AI PROCESSING
+%% =========================================================
+
+add_block("simulink/Discontinuities/Saturation", modelName + "/AI Processing");
+
+set_param(modelName + "/AI Processing", "UpperLimit", num2str(aiProcessingCapacity));
+
+set_param(modelName + "/AI Processing", "LowerLimit", "0");
+
+set_param(modelName + "/AI Processing", "Position", [x4 yMain x4+110 yMain+50]);
+
+%% =========================================================
+% PRIORITY / ROUTINE SPLIT
+%% =========================================================
+
+add_block("simulink/Math Operations/Gain", modelName + "/Priority Cases");
+
+set_param(modelName + "/Priority Cases", "Gain", num2str(priorityFraction));
+
+set_param(modelName + "/Priority Cases", "Position", [x5 yPriority x5+110 yPriority+50]);
+
+add_block("simulink/Math Operations/Gain", modelName + "/Routine Cases");
+
+set_param(modelName + "/Routine Cases", "Gain", num2str(routineFraction));
+
+set_param(modelName + "/Routine Cases", "Position", [x5 yRoutine x5+110 yRoutine+50]);
+
+%% =========================================================
+% REVIEW CAPACITY
+%% =========================================================
+
+add_block("simulink/Discontinuities/Saturation", modelName + "/Priority Review");
+
+set_param(modelName + "/Priority Review", "UpperLimit", num2str(priorityReviewCapacity));
+
+set_param(modelName + "/Priority Review", "LowerLimit", "0");
+
+set_param(modelName + "/Priority Review", "Position", [x6 yPriority x6+110 yPriority+50]);
+
+add_block("simulink/Discontinuities/Saturation", modelName + "/Routine Review");
+
+set_param(modelName + "/Routine Review", "UpperLimit", num2str(routineReviewCapacity));
+
+set_param(modelName + "/Routine Review", "LowerLimit", "0");
+
+set_param(modelName + "/Routine Review", "Position", [x6 yRoutine x6+110 yRoutine+50]);
+
+%% =========================================================
+% COMPLETED SCREENINGS
+%% =========================================================
+
+add_block("simulink/Math Operations/Add", modelName + "/Completed Screening");
+
+set_param(modelName + "/Completed Screening", "Inputs", "++");
+
+set_param(modelName + "/Completed Screening", "Position", [x7 yMain x7+110 yMain+60]);
+
+%% =========================================================
+% BACKLOG
+%% =========================================================
+
+add_block("simulink/Math Operations/Add", modelName + "/Backlog Rate");
+
+set_param(modelName + "/Backlog Rate", "Inputs", "+-");
+
+set_param(modelName + "/Backlog Rate", "Position", [1080 390 1190 450]);
+
+%% =========================================================
+% DISPLAYS
+%% =========================================================
+
+add_block("simulink/Sinks/Display", modelName + "/Arrival Rate Display");
+
+set_param(modelName + "/Arrival Rate Display", "Position", [50 340 150 390]);
+
+add_block("simulink/Sinks/Display", modelName + "/AI Throughput Display");
+
+set_param(modelName + "/AI Throughput Display", "Position", [560 340 660 390]);
+
+add_block("simulink/Sinks/Display", modelName + "/Completed Display");
+
+set_param(modelName + "/Completed Display", "Position", [1260 180 1370 230]);
+
+add_block("simulink/Sinks/Display", modelName + "/Backlog Display");
+
+set_param(modelName + "/Backlog Display", "Position", [1260 390 1370 440]);
+
+%% =========================================================
+% SCOPE
+%% =========================================================
+
+add_block("simulink/Signal Routing/Mux", modelName + "/Performance Mux");
+
+set_param(modelName + "/Performance Mux", "Inputs", "4");
+
+set_param(modelName + "/Performance Mux", "Position", [1240 510 1245 620]);
+
+add_block("simulink/Sinks/Scope", modelName + "/Workflow Scope");
+
+set_param(modelName + "/Workflow Scope", "Position", [1330 525 1430 605]);
+
+%% =========================================================
+% MAIN CONNECTIONS
+%% =========================================================
+
+add_line(modelName, "Patient Arrival/1", "Image Acquisition/1", "autorouting", "on");
+
+add_line(modelName, "Image Acquisition/1", "Bandwidth Constraint/1", "autorouting", "on");
+
+add_line(modelName, "Bandwidth Constraint/1", "AI Processing/1", "autorouting", "on");
+
+%% =========================================================
+% SPLIT CONNECTIONS
+%% =========================================================
+
+add_line(modelName, "AI Processing/1", "Priority Cases/1", "autorouting", "on");
+
+add_line(modelName, "AI Processing/1", "Routine Cases/1", "autorouting", "on");
+
+%% =========================================================
+% REVIEW CONNECTIONS
+%% =========================================================
+
+add_line(modelName, "Priority Cases/1", "Priority Review/1", "autorouting", "on");
+
+add_line(modelName, "Routine Cases/1", "Routine Review/1", "autorouting", "on");
+
+add_line(modelName, "Priority Review/1", "Completed Screening/1", "autorouting", "on");
+
+add_line(modelName, "Routine Review/1", "Completed Screening/2", "autorouting", "on");
+
+%% =========================================================
+% BACKLOG CONNECTIONS
+%% =========================================================
+
+add_line(modelName, "AI Processing/1", "Backlog Rate/1", "autorouting", "on");
+
+add_line(modelName, "Completed Screening/1", "Backlog Rate/2", "autorouting", "on");
+
+%% =========================================================
+% DISPLAY CONNECTIONS
+%% =========================================================
+
+add_line(modelName, "Patient Arrival/1", "Arrival Rate Display/1", "autorouting", "on");
+
+add_line(modelName, "AI Processing/1", "AI Throughput Display/1", "autorouting", "on");
+
+add_line(modelName, "Completed Screening/1", "Completed Display/1", "autorouting", "on");
+
+add_line(modelName, "Backlog Rate/1", "Backlog Display/1", "autorouting", "on");
+
+%% =========================================================
+% SCOPE CONNECTIONS
+%% =========================================================
+
+add_line(modelName, "Patient Arrival/1", "Performance Mux/1", "autorouting", "on");
+
+add_line(modelName, "AI Processing/1", "Performance Mux/2", "autorouting", "on");
+
+add_line(modelName, "Completed Screening/1", "Performance Mux/3", "autorouting", "on");
+
+add_line(modelName, "Backlog Rate/1", "Performance Mux/4", "autorouting", "on");
+
+add_line(modelName, "Performance Mux/1", "Workflow Scope/1", "autorouting", "on");
+
+%% =========================================================
+% SIMULATION SETTINGS
+%% =========================================================
+
+set_param(modelName, "StopTime", "24");
+
+set_param(modelName, "Solver", "ode45");
+
+%% =========================================================
+% ANNOTATIONS
+%% =========================================================
+
+annotation1 = Simulink.Annotation(modelName, "PIXELFORGE - DISTRICT TELEMEDICINE WORKFLOW");
+
+annotation1.Position = [430 20 930 45];
+
+annotation2 = Simulink.Annotation(modelName, "100,000 Patient/Year Prototype Resource Simulation");
+
+annotation2.Position = [460 50 900 75];
+
+annotation3 = Simulink.Annotation(modelName, "Operational parameters are simulation assumptions, not measured hospital data");
+
+annotation3.Position = [420 650 950 675];
+
+%% =========================================================
+% SAVE AND UPDATE MODEL
+%% =========================================================
+
+save_system(modelName);
+
+set_param(modelName, "SimulationCommand", "update");
+
+open_system(modelName);
+
+set_param(modelName, "ZoomFactor", "FitSystem");
+
+%% =========================================================
+% RUN SIMULINK MODEL
+%% =========================================================
 
 disp(" ");
-disp("Grad-CAM shows regions that influenced the model prediction.");
-disp("It is not a lesion segmentation map.");
-disp("Final interpretation requires clinician review.");
+disp("Running Simulink workflow simulation...");
+
+sim(modelName);
+
+disp("Simulink workflow simulation completed.");
+
+%% =========================================================
+% RESOURCE ALLOCATION SUMMARY GRAPH
+%% =========================================================
+
+figure("Name", "PixelForge - District Workflow Capacity", "NumberTitle", "off");
+
+workflowStages = categorical(["Required Demand", "Image Acquisition", "After Bandwidth", "AI Processing", "Clinical Review"]);
+
+workflowRates = [requiredArrivalRate acquiredRate bandwidthAdjustedRate aiThroughputRate completedRate];
+
+bar(workflowStages, workflowRates);
+
+ylabel("Patients per Hour");
+
+title("PixelForge - District Screening Workflow Capacity");
+
+grid on;
+
+%% =========================================================
+% ANNUAL CAPACITY COMPARISON
+%% =========================================================
+
+figure("Name", "PixelForge - Annual Screening Capacity", "NumberTitle", "off");
+
+annualCategories = categorical(["Annual Demand", "Simulated Capacity"]);
+
+annualValues = [annualPatients annualCompletedCapacity];
+
+bar(annualCategories, annualValues);
+
+ylabel("Patients per Year");
+
+title("PixelForge - Annual Screening Demand vs Simulated Capacity");
+
+grid on;
+
+%% =========================================================
+% FINAL COMPLETE POC SUMMARY
+%% =========================================================
+
+disp(" ");
+disp("======================================================");
+disp("              PIXELFORGE POC COMPLETED");
+disp("======================================================");
+
+disp("PART A - AI SCREENING");
+fprintf("DR Grade               : %s\n", predictedClass);
+fprintf("Prediction Confidence  : %.2f %%\n", confidence * 100);
+fprintf("Review Priority        : %s\n", reviewPriority);
+fprintf("AI Pipeline Time       : %.4f seconds\n", totalPipelineTime);
+
+disp(" ");
+
+disp("PART B - DISTRICT WORKFLOW");
+fprintf("Annual Target          : %.0f patients\n", annualPatients);
+fprintf("Required Throughput    : %.2f patients/hour\n", requiredArrivalRate);
+fprintf("AI Throughput          : %.2f patients/hour\n", aiThroughputRate);
+fprintf("Clinical Completion    : %.2f patients/hour\n", completedRate);
+fprintf("Backlog Rate           : %.2f patients/hour\n", backlogRate);
+fprintf("Annual Capacity        : %.0f patients/year\n", annualCompletedCapacity);
+
+disp(" ");
+disp("Generated Simulink Model:");
+disp("PixelForge_Telemedicine_Workflow.slx");
+
+disp(" ");
+disp("IMPORTANT:");
+disp("AI output is intended for screening support.");
+disp("Grad-CAM represents model attention, not lesion segmentation.");
+disp("Operational Simulink values are prototype scenario assumptions.");
+disp("Clinical validation is required before real-world deployment.");
 
 disp("======================================================");
